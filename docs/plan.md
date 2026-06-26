@@ -25,8 +25,11 @@
 - Store data coupling, initially uniform random couple
 
 - Define the reference stochastic process 
-- Sample an intermediate state from endpoint-conditioned bridge 
+- Simulate the reference stochastic process starting from a data instance (sanity check)
+
+- Condition the reference process with endpoints 
 - Simulate the endpoint-conditioned bridge (sanity check)
+- Sample an intermediate state from endpoint-conditioned bridge 
 
 - Sample the markovian drift regression target
 - Predict a markovian drift using a neural network
