@@ -2,7 +2,7 @@ import torch
 from torchvision.utils import save_image
 
 from utils.process_image import load_afhq_image
-from diffusion.reference import sample_brownian_state, sample_conditioned_brownian_bridge
+from diffusion.reference import sample_brownian_state, sample_conditioned_brownian_bridge, sample_markovian_drift_target_brownian_bridge
 
 
 def sample_brownian_state_test(N=5, sigma=1):
@@ -45,6 +45,7 @@ def sample_conditioned_brownian_bridge_test(N=5, sigma=1):
     grid = (grid + 1.0) / 2.0
     save_image(grid, f"tests/outputs/conditioned_brownian_bridge_sigma_{sigma}.png", nrow=N + 1)
 
+
 def sample_conditioned_brownian_bridge_parallel_test(N=5, sigma=1):
     x0 = load_afhq_image(downsize=512)                      # (1, 3, H, W) in [-1, 1]
     xT = load_afhq_image(
@@ -62,11 +63,37 @@ def sample_conditioned_brownian_bridge_parallel_test(N=5, sigma=1):
     save_image(grid, f"tests/outputs/conditioned_brownian_bridge_sigma_{sigma}_parallel.png", nrow=N + 1)
 
 
+def sample_markovian_drift_target_brownian_bridge_test(N, sigma=1):
+    # Simulate SDE starting from x0 with instantenous vt drift  
+    
+    x0 = load_afhq_image(downsize=512)                      # (1, 3, H, W) in [-1, 1]
+    xT = load_afhq_image(
+        path="/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/data/afhq/val/wild/pixabay_wild_000840.jpg",
+        downsize=512
+        )
+    
+    states = [x0]
+    xt = x0
+    dt = torch.tensor([1 / N])
+    for i in range(N): 
+        t = torch.tensor([i / N])       # t in [0, 1/N, ... , (N-1)/N]
+        vt = sample_markovian_drift_target_brownian_bridge(xt, xT, t)
+        xt = xt + vt * dt + sigma * torch.sqrt(dt) * torch.randn_like(xt) 
+        states.append(xt)
+
+    grid = torch.cat(states, dim=0)
+    grid = (grid + 1.0) / 2.0
+    save_image(grid, f"tests/outputs/markovian_drift_target_brownian_bridge_sigma_{sigma}.png", nrow=N + 1)
+
+
 if __name__ == "__main__":
     #for sigma in [0.1, 0.5, 1, 2]:
     #    sample_brownian_state_test(sigma=sigma)
     #sample_brownian_state_parallel_test(sigma=0.5)
 
-    for sigma in [0.1, 0.5, 1, 2]:
-        sample_conditioned_brownian_bridge_test(sigma=sigma)
-    sample_conditioned_brownian_bridge_parallel_test(sigma=1)
+    #for sigma in [0.1, 0.5, 1, 2]:
+    #    sample_conditioned_brownian_bridge_test(sigma=sigma)
+    #sample_conditioned_brownian_bridge_parallel_test(sigma=1)
+
+    sample_markovian_drift_target_brownian_bridge_test(N=20, sigma=1)
+    

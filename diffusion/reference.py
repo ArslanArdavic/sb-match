@@ -22,3 +22,7 @@ def sample_conditioned_brownian_bridge(x0, xT, sigma, t):
 
     return x0 * one_minus_t_broad + xT * t_broad + sigma  * eps
 
+def sample_markovian_drift_target_brownian_bridge(xt, xT, t):
+    # v = ( xT - xt ) / ( 1 - t )
+    # assert t in [ eps, 1-eps ]
+    return (xT - xt)  / (1-t).view(-1, *(1,) * (xT.dim() - 1)) 
