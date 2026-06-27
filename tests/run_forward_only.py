@@ -1,4 +1,5 @@
 import os
+import time
 
 import torch
 import matplotlib
@@ -127,11 +128,11 @@ def forward_only_sample_trajectory_test():
 
 def forward_only_sample_val_terminal_test():
     config = {"device"    : "cuda",
-              "datadir"   : "/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/data/afhq/val/",  
+              "datadir"   : "/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/data/afhq/train/",  
               "downsize"  : 64 ,
-              "batch_size": 8 ,
+              "batch_size": 32 ,
               "model_path": "/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/tests/outputs/forward_only_64_net.pt",
-              "N" : 100,
+              "N" : 30,
               "sigma" : 1,
             }
     
@@ -155,6 +156,10 @@ def forward_only_sample_val_terminal_test():
     net.load_state_dict(torch.load(config["model_path"], map_location=device))
     net.eval()
 
+    total = len(x0_dataloader.dataset)                               # images to simulate forward
+    done  = 0
+    t_start = time.perf_counter()
+
     x0_stack = []
     xT_stack = []
     with torch.no_grad():
@@ -167,6 +172,11 @@ def forward_only_sample_val_terminal_test():
                 xt = xt + vt * dt + sigma * torch.sqrt(dt) * torch.randn_like(xt)
             x0_stack.append(x0.cpu())
             xT_stack.append(xt.cpu())
+
+            done += x0.shape[0]
+            print(f"simulated {done}/{total} images  ({time.perf_counter() - t_start:.1f}s)")
+
+    print(f"done: {total} images in {time.perf_counter() - t_start:.1f}s")
 
     X0 = torch.cat(x0_stack, dim=0)                               # (M, 3, H, W) input cats
     XT = torch.cat(xT_stack, dim=0)                               # (M, 3, H, W) sampled wilds
