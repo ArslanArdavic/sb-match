@@ -39,3 +39,29 @@ def load_afhq_train(
         drop_last=True,
     )
     return dataloader
+
+
+def load_afhq_val(
+        datadir="/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/data/afhq/val/",    
+        cls="cat",
+        downsize=64,
+        batch_size = 32,
+    ):
+    transform = v2.Compose(
+        ([v2.Resize([downsize, downsize], antialias=True)] if downsize != 512 else [])  # AFHQ is native 512
+        + [
+            v2.ToImage(),                              # PIL -> tensor image
+            v2.ToDtype(torch.float32, scale=True),     # uint8 [0,255] -> float [0,1]
+            v2.Normalize([0.5] * 3, [0.5] * 3),        # -> [-1, 1]
+        ]
+    )
+    dataset = torchvision.datasets.ImageFolder(root=datadir, transform=transform)
+
+    idx = dataset.class_to_idx[cls]                # keep only the requested class
+    dataset.samples = [s for s in dataset.samples if s[1] == idx]
+
+    dataloader = torch.utils.data.DataLoader(
+        dataset=dataset,
+        batch_size=batch_size,
+    )
+    return dataloader

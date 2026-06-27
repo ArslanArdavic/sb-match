@@ -1,7 +1,7 @@
 import torch
 from diffusers import UNet2DModel
 
-from utils.process_image import load_afhq_train
+from utils.process_image import load_afhq_train, load_afhq_val
 from diffusion.reference import sample_conditioned_brownian_bridge, sample_markovian_drift_target_brownian_bridge
 
 
@@ -78,4 +78,28 @@ def train(config):
     return net, step_losses, epoch_losses
     
 
+def sample(config):
+
+    PRM = ["device", "datadir", "downsize", "batch_size", "model_path", "N", "sigma"]
+    assert not [prm for prm in PRM if prm not in config]
+
+    device = config["device"]
+
+    x0_dataloader = load_afhq_val(datadir=config["datadir"], cls="cat", downsize=config["downsize"], batch_size=config["batch_size"])
     
+    # load net from the config["model_path"]
+    N     = config["N"]
+    sigma = config["sigma"]
+    dt    = torch.tensor([1 / N])
+
+    xT = []
+
+    for (x0, _) in x0_dataloader:
+        xt = x0
+        for i in range(N):
+            t = torch.tensor([i / N]) 
+            vt = net(xt, t*1000).sample
+            xt = xt + vt * dt + sigma * torch.sqrt(dt) * torch.randn_like(xt) 
+        xT = torch.cat([xT , xt] , dim=0)
+
+    return xT
