@@ -127,11 +127,11 @@ def forward_only_sample_trajectory_test():
 
 def forward_only_sample_val_terminal_test():
     config = {"device"    : "cuda",
-              "datadir"   : "/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/data/afhq/val/",  
+              "datadir"   : "/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/data/afhq/train/",  
               "downsize"  : 64 ,
-              "batch_size": 8 ,
+              "batch_size": 5000 ,
               "model_path": "/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/tests/outputs/forward_only_64_net.pt",
-              "N" : 100,
+              "N" : 2000,
               "sigma" : 1,
             }
     
@@ -180,6 +180,6 @@ if __name__ == "__main__":
 
     #forward_only_train_full_size_test()
 
-    #forward_only_sample_trajectory_test()
+    forward_only_sample_trajectory_test()
 
-    forward_only_sample_val_terminal_test()
+    #forward_only_sample_val_terminal_test()
