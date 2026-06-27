@@ -15,3 +15,9 @@ torchvision                 0.26.0+cu126
 networkx                    3.6.1           
 numpy                       2.4.4           
 ```
+
+# New dependencies
+
+`pip install -U diffusers`
+
+`pip install matplotlib`
