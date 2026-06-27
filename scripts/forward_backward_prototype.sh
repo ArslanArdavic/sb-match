@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=project_465002822
 #SBATCH --partition=small-g
-#SBATCH --job-name=forward_only
+#SBATCH --job-name=forward_backward_prototype
 #SBATCH --output=tests/outputs/log/forward_backward_prototype_%j.out
 #SBATCH --error=tests/outputs/log/forward_backward_prototype_%j.err
 #SBATCH --nodes=1

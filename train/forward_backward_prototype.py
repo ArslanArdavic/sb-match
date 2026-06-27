@@ -15,7 +15,7 @@ def log(msg):
 
 def train(config):
 
-    PRM = ["device", "datadir", "downsize", "batch_size", "sample_batch_size", "lr", "N", "n_outer", "epochs_per_drift", "eps", "sigma"]
+    PRM = ["device", "datadir", "downsize", "batch_size", "sample_batch_size", "gradient_cp", "lr", "N", "n_outer", "epochs_per_drift", "eps", "sigma"]
     assert not [prm for prm in PRM if prm not in config]
 
     config["downsize"] = 64  # This is a prototype script working on small scale.
@@ -53,11 +53,13 @@ def train(config):
         down_block_types=("DownBlock2D", "DownBlock2D", "AttnDownBlock2D", "DownBlock2D"),
         up_block_types=("UpBlock2D", "AttnUpBlock2D", "UpBlock2D", "UpBlock2D"),
     ).to(device)
-
-    forward_net.enable_gradient_checkpointing()
+    
+    if config["gradient_cp"]: 
+        forward_net.enable_gradient_checkpointing()
     forward_net.train()
 
-    backward_net.enable_gradient_checkpointing()
+    if config["gradient_cp"]: 
+        backward_net.enable_gradient_checkpointing()
     backward_net.train()
 
     criterion = torch.nn.MSELoss() 
