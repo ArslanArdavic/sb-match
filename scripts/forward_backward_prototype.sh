@@ -2,8 +2,8 @@
 #SBATCH --account=project_465002822
 #SBATCH --partition=small-g
 #SBATCH --job-name=forward_only
-#SBATCH --output=tests/outputs/log/forward_only_train_full_size_%j.out
-#SBATCH --error=tests/outputs/log/forward_only_train_full_size_%j.err
+#SBATCH --output=tests/outputs/log/forward_backward_prototype_%j.out
+#SBATCH --error=tests/outputs/log/forward_backward_prototype_%j.err
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1            # Number of GPUs per node (max of 8)
 #SBATCH --ntasks=1
@@ -31,4 +31,4 @@ srun singularity run \
   -B /project/project_465002822 \
   -B /flash/project_465002822 \
   "${SIF}" \
-  bash -c "PYTHONPATH=${PROJECT_DIR} python3 -u ${PROJECT_DIR}/tests/run_forward_only.py"
+  bash -c "PYTHONPATH=${PROJECT_DIR} python3 -u ${PROJECT_DIR}/tests/run_forward_backward_prototype.py"
