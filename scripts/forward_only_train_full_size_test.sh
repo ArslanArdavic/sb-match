@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=project_465002822
-#SBATCH --partition=small-g
+#SBATCH --partition=standard-g
 #SBATCH --job-name=forward_only
 #SBATCH --output=tests/outputs/log/forward_only_train_full_size_%j.out
 #SBATCH --error=tests/outputs/log/forward_only_train_full_size_%j.err
@@ -9,7 +9,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=7            # Use --gpus-per-node*7 CPUs on LUMI-G nodes
 #SBATCH --mem-per-gpu=60G
-#SBATCH --time=72:00:00              # time limit
+#SBATCH --time=48:00:00              # time limit
 
 mkdir -p tests/outputs/log
 

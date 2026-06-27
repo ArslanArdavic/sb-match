@@ -71,13 +71,13 @@ def forward_backward_prototype_hpc_test():
           "device"    : "cuda",
           "datadir"   : "/flash/project_465002822/sb-match/data/afhq/train/",  
           "downsize"  : 64 ,
-          "batch_size": 512 ,
+          "batch_size": 256 ,
           "sample_batch_size": 512,
           "gradient_cp": False,
           "lr"    : 1e-4,
-          "N" : 8,
-          "n_outer" : 2, 
-          "epochs_per_drift": 2,
+          "N" : 100,
+          "n_outer" : 15, 
+          "epochs_per_drift": 10,
           "eps"   : 1e-4,
           "sigma" : 1,
         }
@@ -238,8 +238,8 @@ if __name__ == "__main__":
 
     #forward_backward_prototype_test()
 
-    #forward_backward_prototype_hpc_test()
+    forward_backward_prototype_hpc_test()
 
     #prototype_sample_forward_trajectory_test()
 
-    prototype_sample_val_terminal_test()
+    #prototype_sample_val_terminal_test()
