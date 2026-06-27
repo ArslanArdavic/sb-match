@@ -43,6 +43,7 @@ def train(config):
             norm_num_groups=32,                          # ref GroupNorm
         ).to(device)
 
+    net.enable_gradient_checkpointing()
     net.train()
 
     criterion = torch.nn.MSELoss()

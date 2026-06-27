@@ -31,6 +31,4 @@ srun singularity run \
   -B /project/project_465002822 \
   -B /flash/project_465002822 \
   "${SIF}" \
-  bash -c "cd ${PROJECT_DIR} && python3 -m tests.train"
-
-
+  bash -c "PYTHONPATH=${PROJECT_DIR} python3 -u ${PROJECT_DIR}/tests/run_forward_only.py"
