@@ -26,8 +26,8 @@ def train(config):
     dt = torch.tensor([1 / N], device=device) # EM simulation needs
 
     # Only used while sampling - maximize the batch size to 32
-    x0_dataloader = load_afhq_train(datadir=config["datadir"], cls="cat", downsize=config["downsize"], batch_size=config["sample_batch_size"])
-    xT_dataloader = load_afhq_train(datadir=config["datadir"], cls="wild", downsize=config["downsize"], batch_size=config["sample_batch_size"])
+    x0_dataloader = load_afhq_train(datadir=config["datadir"], cls="cat", downsize=config["downsize"], batch_size=config["sample_batch_size"], drop_last=False)
+    xT_dataloader = load_afhq_train(datadir=config["datadir"], cls="wild", downsize=config["downsize"], batch_size=config["sample_batch_size"], drop_last=False)
     
     X0 = torch.cat([x for (x,_) in x0_dataloader])      
     XT = torch.cat([x for (x,_) in xT_dataloader])      

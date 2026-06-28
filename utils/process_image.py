@@ -18,6 +18,7 @@ def load_afhq_train(
         cls="cat",
         downsize=64,
         batch_size = 32,
+        drop_last = True,
     ):
     transform = v2.Compose(
         ([v2.Resize([downsize, downsize], antialias=True)] if downsize != 512 else [])  # AFHQ is native 512
@@ -36,7 +37,7 @@ def load_afhq_train(
         dataset=dataset,
         batch_size=batch_size,
         shuffle=True,
-        drop_last=True,
+        drop_last=drop_last,
     )
     return dataloader
 
