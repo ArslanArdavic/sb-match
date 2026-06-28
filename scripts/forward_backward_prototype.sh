@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=project_465002822
-#SBATCH --partition=small-g
+#SBATCH --partition=dev-g
 #SBATCH --job-name=forward_backward_prototype
 #SBATCH --output=tests/outputs/log/forward_backward_prototype_%j.out
 #SBATCH --error=tests/outputs/log/forward_backward_prototype_%j.err
@@ -9,7 +9,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=7            # Use --gpus-per-node*7 CPUs on LUMI-G nodes
 #SBATCH --mem-per-gpu=60G
-#SBATCH --time=06:00:00              # time limit
+#SBATCH --time=00:30:00              # time limit
 
 mkdir -p tests/outputs/log
 

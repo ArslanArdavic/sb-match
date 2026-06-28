@@ -85,10 +85,11 @@ def train(config):
             if direction == "forward":
 
                 # Train
+                forward_net.train()
                 for epoch in range(config["epochs_per_drift"]):
 
                     running, n = 0.0, 0  # compute average epoch loss
-                    
+
                     log(f"[{direction} {outer}] epoch {epoch} - training")
 
                     for x0, xT in DataLoader(coupling, batch_size=config["batch_size"], shuffle=True):
@@ -113,9 +114,10 @@ def train(config):
                     log(f"[{direction} {outer}] epoch {epoch} - average_loss {epoch_loss:.4f}")
                     
                 
-                # Sample 
+                # Sample
                 log(f"[{direction} {outer}] - sampling ")
-                    
+
+                forward_net.eval()
                 X0 = []
                 XT_sim = []
                 with torch.no_grad():
@@ -130,10 +132,12 @@ def train(config):
                         XT_sim.append(xt.cpu())  
 
                 coupling = TensorDataset(torch.cat(X0), torch.cat(XT_sim))
-                
+                torch.cuda.empty_cache()
+
             elif direction == "backward":
 
                 # Train
+                backward_net.train()
                 for epoch in range(config["epochs_per_drift"]):
 
                     running, n = 0.0, 0  # compute average epoch loss
@@ -162,9 +166,10 @@ def train(config):
                     losses["backward"]["epoch"].append(epoch_loss)
                     log(f"[{direction} {outer}] epoch {epoch} - average_loss {epoch_loss:.4f}")
 
-                # Sample 
+                # Sample
                 log(f"[{direction} {outer}] - sampling ")
 
+                backward_net.eval()
                 X0_sim = []
                 XT     = []
                 with torch.no_grad():
@@ -179,6 +184,7 @@ def train(config):
                         XT.append(xT.cpu())
 
                 coupling = TensorDataset(torch.cat(X0_sim), torch.cat(XT))
+                torch.cuda.empty_cache()
 
     return forward_net, backward_net, losses
         
