@@ -83,6 +83,51 @@ def forward_only_train_full_size_test():
     plt.close()
 
 
+def forward_only_sample_trajectory_full_size_test():
+    config = {"device"    : "cuda",
+              "datadir"   : "/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/data/afhq/val/",  
+              "downsize"  : 512 ,
+              "batch_size": 8 ,
+              "model_path": "/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/tests/outputs/forward_only_512_net.pt",
+              "N" : 1000,
+              "sigma" : 1,
+            }
+    
+    device = config["device"]
+    N      = config["N"]
+    sigma  = config["sigma"]
+    dt     = torch.tensor([1 / N], device=device)
+
+    x0 = load_afhq_image(downsize=config["downsize"]).to(device)   # (1,3,64,64), MUST match model res
+
+    # build the SAME architecture as the 64px training branch, then load weights
+    net = UNet2DModel(
+        sample_size=512,
+        in_channels=3,
+        out_channels=3,
+        layers_per_block=4,                          # ref num_res_blocks=4
+        block_out_channels=(128, 256, 256, 256),     # nf=128, ch_mult [1,2,2,2]
+        down_block_types=("DownBlock2D", "DownBlock2D", "DownBlock2D", "DownBlock2D"),
+        up_block_types=("UpBlock2D", "UpBlock2D", "UpBlock2D", "UpBlock2D"),
+        dropout=0.15,                                # ref dropout 0.15
+        norm_num_groups=32,                          # ref GroupNorm
+    ).to(device)
+    net.load_state_dict(torch.load(config["model_path"], map_location=device))
+    net.eval()
+
+    states = [x0]
+    xt = x0
+    with torch.no_grad():
+        for i in range(N):
+            t = torch.tensor([i / N], device=device)              # current time, 0 .. (N-1)/N
+            vt = net(xt, t * 1000).sample                          # MARGINAL drift, no xT; same t*1000 as training
+            xt = xt + vt * dt + sigma * torch.sqrt(dt) * torch.randn_like(xt)
+            states.append(xt)
+
+    grid = (torch.cat(states, dim=0).cpu() + 1.0) / 2.0            # all N+1 frames
+    save_image(grid, "tests/outputs/forward_only_sample_trajectory_test_512.png", nrow=N+1)
+
+
 def forward_only_sample_trajectory_test():
     config = {"device"    : "cuda",
               "datadir"   : "/home/arslan/research/literature/foundations-schrodinger-bridges-tang-2026/sb-match/data/afhq/val/",  
@@ -192,4 +237,6 @@ if __name__ == "__main__":
 
     #forward_only_sample_trajectory_test()
 
-    forward_only_sample_val_terminal_test()
+    #forward_only_sample_val_terminal_test()
+
+    forward_only_sample_trajectory_full_size_test()
