@@ -9,7 +9,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=7            # Use --gpus-per-node*7 CPUs on LUMI-G nodes
 #SBATCH --mem-per-gpu=60G
-#SBATCH --time=06:00:00              # time limit
+#SBATCH --time=24:00:00              # time limit
 
 mkdir -p tests/outputs/log
 

@@ -72,7 +72,7 @@ def forward_backward_prototype_hpc_test():
           "datadir"   : "/flash/project_465002822/sb-match/data/afhq/train/",  
           "downsize"  : 64 ,
           "batch_size": 256 ,
-          "sample_batch_size": 512,
+          "sample_batch_size": 1024,
           "gradient_cp": False,
           "lr"    : 1e-4,
           "N" : 100,
