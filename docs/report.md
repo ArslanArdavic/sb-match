@@ -58,7 +58,28 @@ Results:
     - 1.1. tests/outputs/forward_only/lumi/forward_only_64_epoch_losses.png
     - 1.2. tests/outputs/forward_only/lumi/forward_only_64_step_losses.png
     - 1.3. tests/outputs/forward_only/lumi/forward_only_sample_trajectory_test_64.png
-2. 
+2. /pfs/lustrep3/projappl/project_465002822/sb-match/tests/outputs/log/test_forward_only_512_20309037.out
 
 Notes:
 2. Timeout after 30 mins.
+
+
+## Setup 3 - Forward-Backward Prototype 64x64 on LUMI
+
+Objective:
+- Smoke train the bridge for 64x64 images and sample forward trajectory of one image, on LUMI.
+
+Execution:
+- `sbatch scripts/forward_backward_prototype.sh`
+
+Configs:
+1. {
+    "batch_size": 256 ,
+    "sample_batch_size": 512,  
+    "N" : 8,        
+    "n_outer" : 2, 
+    "epochs_per_drift": 1,
+    }
+
+Results:
+1. 

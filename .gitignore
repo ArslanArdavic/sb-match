@@ -2,3 +2,4 @@
 /data/
 /tests/outputs/
 __pycache__/
+/scripts/sync/
