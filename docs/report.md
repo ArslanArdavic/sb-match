@@ -58,7 +58,8 @@ Results:
     - 1.1. tests/outputs/forward_only/lumi/forward_only_64_epoch_losses.png
     - 1.2. tests/outputs/forward_only/lumi/forward_only_64_step_losses.png
     - 1.3. tests/outputs/forward_only/lumi/forward_only_sample_trajectory_test_64.png
-2. /pfs/lustrep3/projappl/project_465002822/sb-match/tests/outputs/log/test_forward_only_512_20309037.out
+2. Completed in ~ 01:10:00
+    - 2.1. tests/outputs/forward_only/lumi/forward_only_sample_trajectory_test_512.png
 
 Notes:
 2. Timeout after 30 mins.
@@ -82,4 +83,15 @@ Configs:
     }
 
 Results:
-1. 
+1. Completed in 00:10:58
+    - 1.1 tests/outputs/prototype/lumi/prototype_backward_64_hpc_epoch_losses.png                             
+    - 1.2 tests/outputs/prototype/lumi/prototype_backward_64_hpc_step_losses.png  
+    - 1.3 tests/outputs/prototype/lumi/prototype_forward_64_hpc_epoch_losses.png  
+    - 1.4 tests/outputs/prototype/lumi/prototype_forward_64_hpc_step_losses.png       
+    - 1.5 tests/outputs/prototype/lumi/prototype_forward_sample_trajectory_test_64.png      
+
+## Setup 4 - Forward-Backward Prototype + EMA 64x64 on LUMI
+
+Objective: Averaging of the models with EMA, train and sample for 64x64 images on LUMI
+
+Observation: DDBSM does not implement EMA! 

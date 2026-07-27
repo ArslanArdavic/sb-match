@@ -275,7 +275,7 @@ if __name__ == "__main__":
         forward_only_train_test(location="lumi", resolution=64)
         forward_only_sample_trajectory_test(location="lumi", resolution=64)
     elif (args.location, args.resolution) == ("lumi", "512"):
-        #forward_only_train_test(location="lumi", resolution=512)
+        forward_only_train_test(location="lumi", resolution=512)
         forward_only_sample_trajectory_test(location="lumi", resolution=512)
     else:
         raise ValueError(f"unknown (location, resolution) pair: {(args.location, args.resolution)}")
