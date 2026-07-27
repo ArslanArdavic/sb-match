@@ -54,5 +54,11 @@ Execution:
 2. `sbatch scripts/test_forward_only_512.sh`
 
 Results:
-1.
-2.
+1. Completed in 00:03:35
+    - 1.1. tests/outputs/forward_only/lumi/forward_only_64_epoch_losses.png
+    - 1.2. tests/outputs/forward_only/lumi/forward_only_64_step_losses.png
+    - 1.3. tests/outputs/forward_only/lumi/forward_only_sample_trajectory_test_64.png
+2. 
+
+Notes:
+2. Timeout after 30 mins.
