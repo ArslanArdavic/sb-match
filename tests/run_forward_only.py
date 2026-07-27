@@ -80,16 +80,29 @@ def forward_only_sample_trajectory_test(location="local", resolution=64):
 
     x0 = load_afhq_image(path=config["image_path"], downsize=config["downsize"]).to(device)   # (1,3,64,64), MUST match model res
 
+    if resolution == 64:
     # build the SAME architecture as the 64px training branch, then load weights
-    net = UNet2DModel(
-        sample_size=config["downsize"],
-        in_channels=3,
-        out_channels=3,
-        layers_per_block=2,
-        block_out_channels=(128, 256, 256, 256),
-        down_block_types=("DownBlock2D", "DownBlock2D", "AttnDownBlock2D", "DownBlock2D"),
-        up_block_types=("UpBlock2D", "AttnUpBlock2D", "UpBlock2D", "UpBlock2D"),
-    ).to(device)
+        net = UNet2DModel(
+            sample_size=config["downsize"],
+            in_channels=3,
+            out_channels=3,
+            layers_per_block=2,
+            block_out_channels=(128, 256, 256, 256),
+            down_block_types=("DownBlock2D", "DownBlock2D", "AttnDownBlock2D", "DownBlock2D"),
+            up_block_types=("UpBlock2D", "AttnUpBlock2D", "UpBlock2D", "UpBlock2D"),
+        ).to(device)
+    elif resolution == 512:
+        net = UNet2DModel(
+            sample_size=512,
+            in_channels=3,
+            out_channels=3,
+            layers_per_block=4,                          # ref num_res_blocks=4
+            block_out_channels=(128, 256, 256, 256),     # nf=128, ch_mult [1,2,2,2]
+            down_block_types=("DownBlock2D", "DownBlock2D", "DownBlock2D", "DownBlock2D"),
+            up_block_types=("UpBlock2D", "UpBlock2D", "UpBlock2D", "UpBlock2D"),
+            dropout=0.15,                                # ref dropout 0.15
+            norm_num_groups=32,                          # ref GroupNorm
+        ).to(device)
     net.load_state_dict(torch.load(config["model_path"], map_location=device))
     net.eval()
 
@@ -262,7 +275,7 @@ if __name__ == "__main__":
         forward_only_train_test(location="lumi", resolution=64)
         forward_only_sample_trajectory_test(location="lumi", resolution=64)
     elif (args.location, args.resolution) == ("lumi", "512"):
-        forward_only_train_test(location="lumi", resolution=512)
+        #forward_only_train_test(location="lumi", resolution=512)
         forward_only_sample_trajectory_test(location="lumi", resolution=512)
     else:
         raise ValueError(f"unknown (location, resolution) pair: {(args.location, args.resolution)}")
