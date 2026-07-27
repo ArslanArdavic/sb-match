@@ -16,11 +16,11 @@ def sample_brownian_state_test(N=5, sigma=1):
     # (N+1, 3, H, W), undo [-1,1] -> [0,1], lay out as one row
     grid = torch.cat(states, dim=0)
     grid = (grid + 1.0) / 2.0
-    save_image(grid, f"tests/outputs/brownian_states_sigma_{sigma}.png", nrow=N + 1)
+    save_image(grid, f"tests/outputs/reference/brownian_states_sigma_{sigma}.png", nrow=N + 1)
 
 
 def sample_brownian_state_parallel_test(N=5, sigma=1):
-    x0 = load_afhq_image()                      # (1, 3, H, W) in [-1, 1]
+    x0 = load_afhq_image(downsize=512)                      # (1, 3, H, W) in [-1, 1]
 
     x_stack = x0.repeat(N, 1, 1, 1)                          # (N, 3, H, W)
     t = torch.tensor([i / N for i in range(1, N + 1)])       # (N,)
@@ -28,7 +28,7 @@ def sample_brownian_state_parallel_test(N=5, sigma=1):
 
     grid = torch.cat([x0, states], dim=0)                    # (N+1, 3, H, W)
     grid = (grid + 1.0) / 2.0                                # [-1,1] -> [0,1]
-    save_image(grid, f"tests/outputs/brownian_states_sigma_{sigma}_parallel.png", nrow=N + 1)
+    save_image(grid, f"tests/outputs/reference/brownian_states_sigma_{sigma}_parallel.png", nrow=N + 1)
 
 
 def sample_conditioned_brownian_bridge_test(N=5, sigma=1):
@@ -43,7 +43,7 @@ def sample_conditioned_brownian_bridge_test(N=5, sigma=1):
 
     grid = torch.cat(states, dim=0)
     grid = (grid + 1.0) / 2.0
-    save_image(grid, f"tests/outputs/conditioned_brownian_bridge_sigma_{sigma}.png", nrow=N + 1)
+    save_image(grid, f"tests/outputs/reference/conditioned_brownian_bridge_sigma_{sigma}.png", nrow=N + 1)
 
 
 def sample_conditioned_brownian_bridge_parallel_test(N=5, sigma=1):
@@ -60,7 +60,7 @@ def sample_conditioned_brownian_bridge_parallel_test(N=5, sigma=1):
 
     grid = torch.cat([x0, states, xT], dim=0)                    # (N+1, 3, H, W)
     grid = (grid + 1.0) / 2.0                                # [-1,1] -> [0,1]
-    save_image(grid, f"tests/outputs/conditioned_brownian_bridge_sigma_{sigma}_parallel.png", nrow=N + 1)
+    save_image(grid, f"tests/outputs/reference/conditioned_brownian_bridge_sigma_{sigma}_parallel.png", nrow=N + 1)
 
 
 def sample_markovian_drift_target_brownian_bridge_test(N, sigma=1):
@@ -83,17 +83,17 @@ def sample_markovian_drift_target_brownian_bridge_test(N, sigma=1):
 
     grid = torch.cat(states, dim=0)
     grid = (grid + 1.0) / 2.0
-    save_image(grid, f"tests/outputs/markovian_drift_target_brownian_bridge_sigma_{sigma}.png", nrow=N + 1)
+    save_image(grid, f"tests/outputs/reference/markovian_drift_target_brownian_bridge_sigma_{sigma}.png", nrow=N + 1)
 
 
 if __name__ == "__main__":
     #for sigma in [0.1, 0.5, 1, 2]:
     #    sample_brownian_state_test(sigma=sigma)
-    #sample_brownian_state_parallel_test(sigma=0.5)
+    sample_brownian_state_parallel_test(sigma=1)
 
     #for sigma in [0.1, 0.5, 1, 2]:
     #    sample_conditioned_brownian_bridge_test(sigma=sigma)
-    #sample_conditioned_brownian_bridge_parallel_test(sigma=1)
+    sample_conditioned_brownian_bridge_parallel_test(sigma=1)
 
-    sample_markovian_drift_target_brownian_bridge_test(N=20, sigma=1)
+    sample_markovian_drift_target_brownian_bridge_test(N=5, sigma=1)
     
