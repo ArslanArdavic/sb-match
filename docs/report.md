@@ -95,3 +95,15 @@ Results:
 Objective: Averaging of the models with EMA, train and sample for 64x64 images on LUMI
 
 Observation: DDBSM does not implement EMA! 
+
+Conclusion: **SKIP THIS SETUP**
+
+## Setup 5 - Bridge Prototype with Caching 64x64
+
+Objective: Introduce the caching mechanism to prevent sampling over the whole source/target datasets.
+
+Reference: Shi et al. (2023) adapts trajectory caching procedure of De Bortoli et al. (2021)
+
+Observation: 
+- DDBSM does not implement caching! 
+- DBSM iterates training loop over a constant regarding the number of steps. 
