@@ -1,3 +1,7 @@
+"""
+TODO: COPY THE UPDATED VERSION HERE
+"""
+
 """pseudocode for training a bridge without caching mechanism
 
 build_dataloaders
@@ -45,13 +49,13 @@ OUR DESING CHOICES:
     1. ALIGNS
     2. ALIGNS
     3. ALIGNS
-    4. EFFECTIVELY ALINGS: indepented coupling for the first outer iteration on both directions
-    5. EFFECTIVELY ALINGS: one N for cache simulation and for evaluation
-    6. EFFECTIVELY ALINGS: one training tuple per cached pair per visit
-    7. cache lives in cpu memory, gone on restart
-    8. no resume, a killed job re-simulates the whole cache
-    9. simulate the cache with the live training net
-    10. the old pair loader stays alive while the new cache is simulated
+    4. ALIGNS
+    5. EFFECTIVELY ALINGS: indepented coupling for the first outer iteration on both directions
+    6. EFFECTIVELY ALINGS: one N for cache simulation and for evaluation
+    7. EFFECTIVELY ALINGS: one training tuple per cached pair per visit
+    8. cache lives in cpu memory, gone on restart
+    9. no resume, a killed job re-simulates the whole cache
+    10. simulate the cache with the live training net
     11. cache_npair and steps_cache_refresh set directly, nothing logged
 
 
@@ -60,14 +64,14 @@ REFERENCE CHOICES:
     2. first iteration does not use cache
     3. cache_npar // cache_batch_size separate draws at cache_batch_size (exact division asserted),
        so cache size is not capped by dataset size
-    4. parametrized to allow brownian motion couple, ind in first outer for both directions in afqh setup
-    5. cache_num_steps separate from num_steps / test_num_steps (left equal at afhq)
-    6. num_repeat_data repeat_interleaves each cached pair inside the batch, more noise draws at no extra nfe (1 at afhq)
-    7. cache written to disk as an .npy memmap per (direction, outer), read lazily, old ones pruned
-    8. per-batch temp .pt + seed derived from (outer, refresh_idx, batch) + completion marker make a
+    4. drops the old handle and empties the cuda cache before simulating a new one
+    5. parametrized to allow brownian motion couple, ind in first outer for both directions in afqh setup
+    6. cache_num_steps separate from num_steps / test_num_steps (left equal at afhq)
+    7. num_repeat_data repeat_interleaves each cached pair inside the batch, more noise draws at no extra nfe (1 at afhq)
+    8. cache written to disk as an .npy memmap per (direction, outer), read lazily, old ones pruned
+    9. per-batch temp .pt + seed derived from (outer, refresh_idx, batch) + completion marker make a
        refresh resumable and bit-identical, next stage pre-cached right after the checkpoint
-    9. simulate with an ema copy of the net in eval mode
-    10. drops the old handle and empties the cuda cache before simulating a new one
+    10. simulate with an ema copy of the net in eval mode
     11. cache_npar derived from batch_size * stride / num_repeat_data by default, cache_epochs and data_epochs logged at startup
 
 ################################################################################################################################

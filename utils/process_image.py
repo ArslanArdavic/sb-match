@@ -1,3 +1,5 @@
+from itertools import repeat
+
 import torch
 import torchvision
 import torchvision.transforms.functional as TF
@@ -66,3 +68,8 @@ def load_afhq_val(
         batch_size=batch_size,
     )
     return dataloader
+
+def infinite_dataloader(dataloader):
+    for loader in repeat(dataloader):
+        for data in loader:
+            yield data
