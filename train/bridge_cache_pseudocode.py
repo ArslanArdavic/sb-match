@@ -11,6 +11,7 @@ forward_net , backward_net = build_models
 define loss function and build_optimizers
 
 for outer in range(n_outer):
+
     for direction in ("forward", "backward"):
     
         if direction == "forward":
@@ -37,36 +38,133 @@ for outer in range(n_outer):
 
 
 """pseudocode for training a bridge model with the caching mechanism
-TODO: backward branch
 
-infinite_source_dataloader = build_infinite_dataloader(batch_size=cache_npair, data=source)
-infinite_target_dataloader = build_infinite_dataloader(batch_size=cache_npair, data=target)
+################################################################################################################################
+
+OUR DESING CHOICES:
+    1. ALIGNS
+    2. ALIGNS
+    3. ALIGNS
+    4. EFFECTIVELY ALINGS: indepented coupling for the first outer iteration on both directions
+    5. EFFECTIVELY ALINGS: one N for cache simulation and for evaluation
+    6. EFFECTIVELY ALINGS: one training tuple per cached pair per visit
+    7. cache lives in cpu memory, gone on restart
+    8. no resume, a killed job re-simulates the whole cache
+    9. simulate the cache with the live training net
+    10. the old pair loader stays alive while the new cache is simulated
+    11. cache_npair and steps_cache_refresh set directly, nothing logged
+
+
+REFERENCE CHOICES:
+    1. first train backward
+    2. first iteration does not use cache
+    3. cache_npar // cache_batch_size separate draws at cache_batch_size (exact division asserted),
+       so cache size is not capped by dataset size
+    4. parametrized to allow brownian motion couple, ind in first outer for both directions in afqh setup
+    5. cache_num_steps separate from num_steps / test_num_steps (left equal at afhq)
+    6. num_repeat_data repeat_interleaves each cached pair inside the batch, more noise draws at no extra nfe (1 at afhq)
+    7. cache written to disk as an .npy memmap per (direction, outer), read lazily, old ones pruned
+    8. per-batch temp .pt + seed derived from (outer, refresh_idx, batch) + completion marker make a
+       refresh resumable and bit-identical, next stage pre-cached right after the checkpoint
+    9. simulate with an ema copy of the net in eval mode
+    10. drops the old handle and empties the cuda cache before simulating a new one
+    11. cache_npar derived from batch_size * stride / num_repeat_data by default, cache_epochs and data_epochs logged at startup
+
+################################################################################################################################
+    
+
+infinite_source_dataloader = build_infinite_dataloader(batch_size=cache_limit, data=source)
+infinite_target_dataloader = build_infinite_dataloader(batch_size=cache_limit, data=target)
+
+infinite_source_train_dataloader = build_infinite_dataloader(batch_size=batch_size, data=source)
+infinite_target_train_dataloader = build_infinite_dataloader(batch_size=batch_size, data=target)
 
 forward_net , backward_net = build_models
 define loss function and build_optimizers
 
 
 for outer in range(n_outer):
-    for direction in ("forward", "backward"):
 
-        if direction == "forward":
+    for direction in ("bacward", "forward"):
 
-            
+        if direction == "forward":        
+        
             step = 0
+
             while step < steps_per_drift:
-                if step % steps_cache_refresh == 0:
-                    xT = infinite_target_dataloader.get_batch_and_proceed
-                    if outer == 0:
-                        x0 = infinite_source_dataloader.get_batch_and_proceed
-                    else:
-                        for i in range(0, cache_npair // cache_limit)
-                            start from xT[i*cache_limit:(i+1)*cache_limit] sample with the backward_net and store in the cpu 
-                        x0 is the collection of generated sampled
-                    couple xT and x0                    
-                    infinite_pair_loader = build_infinite_dataloader(batch_size=batch_size, data=coupling)
+            
+                if outer == 0:
                 
-                batch = next(infinite_pair_loader)
-                update forward_net using the batch
+                    release infinite_pair_loader, x0 and xT
+
+                    x0 = infinite_source_train_dataloader.get_batch_and_proceed
+                    xT = infinite_target_train_dataloader.get_batch_and_proceed
+
+                    couple x0 and xT
+                    update forward_net using the coupling
+
+                else:     
+            
+                    if step % steps_cache_refresh == 0:
+                    
+                        release infinite_pair_loader, x0 and xT
+                        empty cuda cache
+
+                        for i in range(cache_npair // cache_limit)
+                        
+                            xT = infinite_target_dataloader.get_batch_and_proceed
+                            x0 = start from xT sample with the backward_net with no gradient
+                            store x0 and xT in the cpu
+                        
+                        couple accumulated x0 and xT                    
+                        
+                        infinite_pair_loader = build_infinite_dataloader(batch_size=batch_size, data=coupling)
+                    
+                    batch = next(infinite_pair_loader)
+                    update forward_net using the batch
 
                 step += 1
+
+
+##################### REFERENCE STRUCTURE with OUR DESIGN CHOICES #####################                 
+
+for outer in range(n_outer):
+
+    for direction in ("bacward", "forward"):
+
+        if direction == "forward":        
+        
+            step = 0
+
+            while step < steps_per_drift:
+            
+                if step % steps_cache_refresh == 0:
+                                    
+                    release infinite_pair_loader, x0 and xT
+                    empty cuda cache
+
+                    if outer != 0:
+
+                        for i in range(cache_npair // cache_limit)
+                        
+                            xT = infinite_target_dataloader.get_batch_and_proceed
+                            x0 = start from xT sample with the backward_net with no gradient
+                            store x0 and xT in the cpu
+                        
+                        couple accumulated x0 and xT                    
+                        
+                        infinite_pair_loader = build_infinite_dataloader(batch_size=batch_size, data=coupling)
+
+                if outer == 0 :
+                    
+                    x0 = infinite_source_train_dataloader.get_batch_and_proceed
+                    xT = infinite_target_train_dataloader.get_batch_and_proceed
+
+                    batch = coupled x0 and xT
+                else:
+                    batch = next(infinite_pair_loader)
+                    
+                update forward_net using the batch
+                step += 1
+
 """
