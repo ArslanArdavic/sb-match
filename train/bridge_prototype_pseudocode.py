@@ -144,10 +144,11 @@ for outer in range(n_outer):
             
                 if step % steps_cache_refresh == 0:
                                     
-                    release infinite_pair_loader, x0 and xT
-                    empty cuda cache
 
                     if outer != 0:
+                        
+                        release infinite_pair_loader, x0 and xT
+                        empty cuda cache
 
                         for i in range(cache_npair // cache_limit)
                         
