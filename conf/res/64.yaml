@@ -1,0 +1,9 @@
+# @package _global_
+# 64px branch of build_models(): DDPMpp_32, 4 levels
+
+downsize: 64
+batch_size: 128
+
+# cache_npair % cache_limit == 0 and cache_npair % batch_size == 0
+cache_npair: 1024
+cache_limit: 128

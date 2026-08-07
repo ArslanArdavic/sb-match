@@ -1,0 +1,10 @@
+# @package _global_
+# 512px branch of build_models(): DDPMpp_RF, 7 levels
+
+downsize: 512
+batch_size: 4       # ref afhq batch_size
+
+# cache sizing. bridge_prototype asserts cache_npair % cache_limit == 0
+#                                   and cache_npair % batch_size  == 0
+cache_npair: 400    # ref cache_npar
+cache_limit: 10     # ref cache_batch_size, the EM simulation chunk that must fit on the GPU

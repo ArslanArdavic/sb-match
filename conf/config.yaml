@@ -1,0 +1,39 @@
+defaults:
+  - _self_        # keys below are overridden by the groups that follow
+  - env: lumi     # conf/env/*.yaml   -> datadir, outdir  (where the run lives)
+  - res: 512      # conf/res/*.yaml   -> downsize, batch_size, cache sizing
+
+# --- flat keys consumed by train.bridge_prototype.train() -----------------------
+# every name in bridge_prototype.PRM must resolve here or in one of the groups
+
+device: cuda
+
+lr: 1.0e-4
+n_outer: 20                # paper appendix I.5: n_ipf = 20 (yaml says 30, see module docstring)
+steps_first_round: 100000  # first_num_iter, bridge-matching pretrain
+steps_per_drift: 5000      # num_iter for every later outer
+steps_cache_refresh: 1000  # cache_refresh_stride
+
+N: 100                     # EM steps, both for cache simulation and evaluation
+sigma: 2.23606797749979    # sqrt(5); sigma^2 = sum(gammas) = 5 at afhq
+eps: 1.0e-4
+
+log_stride: 100
+
+# --- not read by train(), used by the entry point --------------------------------
+seed: 42
+
+wandb:
+  entity: arda-arslan-allab
+  project: dsbm-afqh
+  mode: online             # `wandb.mode=disabled` on the CLI for a dry run
+
+# --- hydra's own settings --------------------------------------------------------
+hydra:
+  run:
+    dir: ${outdir}/hydra/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    dir: ${outdir}/hydra/multirun/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.num}
+  job:
+    chdir: false           # keep cwd at the repo root so relative paths still work

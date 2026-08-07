@@ -15,7 +15,7 @@ OUR DESING CHOICES:
     9. no resume, a killed job re-simulates the whole cache
     10. simulate the cache with the live training net
     11. cache_npair and steps_cache_refresh set directly, nothing logged
-    12. plain mse on the drift target, no t dependent weighting
+    12. EFFECTIVELY ALINGS: loss_scale hardcoded, the reference gates it on a flag with a std_trick sibling, see docs/loss-scaling.md
     13. EFFECTIVELY ALINGS: sigma set directly, sigma^2 = 5, see (a) below
     14. EFFECTIVELY ALINGS: no noise term at the last em step, reference parametrizes
     15. backward net reparametrized to its own time, tau = 1 - t
@@ -57,6 +57,7 @@ PAPER vs REFERENCE IMPLEMENTATION MISMATCHES:
 """
 import wandb
 import torch
+from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import TensorDataset, DataLoader
 from diffusers import UNet2DModel
 
@@ -170,8 +171,9 @@ def train(config):
                     xt = sample_conditioned_brownian_bridge(x0, xT, sigma, t)
                     target = sample_markovian_drift_target_brownian_bridge(xt, xT, t)
 
-                    pred = forward_net(xt, t * 1000).sample 
-                    loss = criterion(pred, target)
+                    pred = forward_net(xt, t * 1000).sample
+                    w = (sigma * torch.sqrt(1 - t)).view(-1, 1, 1, 1) # loss_scale, bounds the t -> 1 tail
+                    loss = criterion(w * pred, w * target)
                     loss.backward()
                     grad_norm = torch.nn.utils.clip_grad_norm_(forward_net.parameters(), 1.0) # pre-clip gradient norm
                     forward_optimizer.step()
@@ -241,8 +243,9 @@ def train(config):
                     xt = sample_conditioned_brownian_bridge(x0=xT, xT=x0, sigma=sigma, t=t)
                     target = sample_markovian_drift_target_brownian_bridge(xt, xT=x0, t=t)
 
-                    pred = backward_net(xt, t * 1000).sample 
-                    loss = criterion(pred, target)
+                    pred = backward_net(xt, t * 1000).sample
+                    w = (sigma * torch.sqrt(1 - t)).view(-1, 1, 1, 1) # loss_scale, sigma*sqrt(t) in global time, tau = 1 - t here
+                    loss = criterion(w * pred, w * target)
                     loss.backward()
                     grad_norm = torch.nn.utils.clip_grad_norm_(backward_net.parameters(), 1.0) # pre-clip gradient norm
                     backward_optimizer.step()
@@ -300,11 +303,16 @@ def build_models(downsize):
 
 def setup_wandb(config):
 
+    # hydra hands us a DictConfig; wandb wants a plain dict, resolved (${...} expanded)
+    if isinstance(config, DictConfig):
+        config = OmegaConf.to_container(config, resolve=True)
+
     run = wandb.init(
         # Set the wandb entity where your project will be logged (generally your team name).
-        entity="arda-arslan-allab",
+        entity=config["wandb"]["entity"],
         # Set the wandb project where this run will be logged.
-        project="dsbm-afqh",
+        project=config["wandb"]["project"],
+        mode=config["wandb"]["mode"],
         # Track hyperparameters and run metadata.
         config=config,
     )

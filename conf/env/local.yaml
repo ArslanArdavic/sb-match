@@ -1,0 +1,4 @@
+# @package _global_
+
+datadir: /home/arslan/research/sb-match/data/afhq/train/
+outdir: /home/arslan/research/sb-match/tests/outputs/bridge
