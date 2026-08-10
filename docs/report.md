@@ -128,3 +128,14 @@ Execution:
 
 Conclusion: **CANCEL EXPERIMENT**
 - Training only the first direction will take more than 16 hours.
+
+
+### 6 - Full Experiment 64x46
+
+Objective: Train downsized models with the setting reported in the (Shi et al., 2023).
+
+Remark: Increased batch size requires adjustments to cache and steps parameters. 
+
+Execution:
+- `sbatch scripts/bridge_64.sh`
+

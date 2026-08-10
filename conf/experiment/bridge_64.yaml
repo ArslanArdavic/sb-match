@@ -1,0 +1,81 @@
+# @package _global_
+# 64px run, sized to the reference 512px budget in *epochs*, not in steps.
+#
+#   sbatch scripts/bridge_64.sh
+#   python3 -u main.py experiment=bridge_64
+#
+# WHY THIS FILE EXISTS
+# `res='64'` alone pairs batch_size 128 with config.yaml's 512px step counts, which is
+# 32x the reference epochs and ~200 h on one GCD. The resolution is a config group, the
+# budget is not; this file is the budget.
+#
+# WHAT IS MATCHED
+# The reference afhq setup (512px, batch_size 4, 100000 + 19x5000 steps, cache_npar 400,
+# cache_refresh_stride 1000) fixes three separate "epoch" quantities. All three are matched:
+#
+#                    formula                                           ref-512    here
+#   images drawn     steps * batch_size                                780,000    779,392   (-0.08%)
+#   cache_epochs     batch_size * steps_cache_refresh / cache_npair       10.0       10.0   (exact)
+#   data_epochs      steps_per_drift * cache_npair / (5153 * steps_cache_refresh)
+#                                                                        0.388      0.387   (-0.3%)
+#
+#   images drawn is optimizer steps x batch, i.e. total data exposure
+#   cache_epochs is how many times a cached pair is revisited before the cache is dropped
+#   data_epochs  is how much of the real 5153-image class a drift's cache draws cover
+#
+# The one quantity that does not match: 312/80 -> 4 refreshes per drift vs the reference's
+# 5000/1000 -> 5. Immaterial; cache_epochs is the staleness property that matters and it is exact.
+#
+# COST
+# The 64px net (4 levels, layers_per_block 4) is ~22x cheaper per image than the 512px net
+# (7 levels, layers_per_block 2) by conv FLOPs -- not 64x, because it runs 4 res blocks per
+# level instead of 2 and the 512 net's two priciest levels are only 128 channels wide.
+# Matching epochs holds total image-passes fixed, so the whole budget divides by that ratio:
+#
+#   reference 512px   124 h train + 190 h cache = 314 h
+#   here               5.6 h train +  8.9 h cache = ~14.5 h   (= 314 / 22)
+#
+# Derived from the smoke run's 1.144 s/train step at bs=4 and 0.90 s/sim eval at bs=10, so
+# carry a 2-3x band: 7-40 h. --time is set to the 48 h partition max for the top of that band.
+#
+# THE TRADE
+# Same epochs at 16x the batch means 16x fewer optimizer steps than the reference:
+# 6250 pretrain steps here vs 100000 there. Step count, not data exposure, is usually what
+# converges a bridge-matching drift. If the pretrain loss is still falling at 6250, the fix is
+# to raise steps_first_round -- there is wall-clock headroom for 2-4x. batch_size 128 would
+# halve the step count again for the same epochs, which is why it is 64 here despite the
+# slightly worse GPU utilisation.
+#
+# LEARNING RATE
+# lr stays at the reference 1e-4 even though the batch is 16x larger. Batch-scaling rules
+# (sqrt -> 4e-4, linear -> 1.6e-3) assume the reference tuned 1e-4 *for* bs=4; it almost
+# certainly did not -- 1e-4 is the stock Adam lr for diffusion UNets across the DDPM/ADM/RF
+# lineage at batch sizes from 4 to 512, set by architecture rather than by batch. Three
+# further reasons to leave it alone:
+#   - train() runs plain Adam, no warmup and no schedule. The published scaling rules ship
+#     with a warmup precisely because the large-lr regime is unstable early; clip_grad_norm_
+#     at 1.0 is a floor, not a substitute.
+#   - the regression target has a heavy t -> 1 tail (the reason loss_scale exists, DESIGN
+#     CHOICE 12); a larger lr is the wrong direction of risk for an unattended run.
+#   - this run already differs from the reference on resolution, model branch, batch size and
+#     step count. Moving lr too would make a bad result unattributable.
+# Compensate for the 16x step reduction by raising steps_first_round, where the effect is
+# legible, not by raising lr, where it is not.
+
+defaults:
+  - override /res: "64"   # pinned: build_models() 64px branch, DDPMpp_32, 4 levels
+
+batch_size: 64
+lr: 1.0e-4                # reference value, deliberately NOT batch-scaled -- see LEARNING RATE below
+
+n_outer: 20               # unchanged, paper appendix I.5 n_ipf = 20
+steps_first_round: 6250   # 100000 * 4 / 64
+steps_per_drift: 312      # 5000 * 4 / 64
+steps_cache_refresh: 80   # holds cache_epochs at 10.0
+
+# train() asserts cache_npair % cache_limit == 0 and cache_npair % batch_size == 0
+cache_npair: 512          # 512/5153 = 9.9% of the class, ref cache_npar 400 = 7.8%
+cache_limit: 128          # 4 chunks per refresh; the EM chunk that has to fit on the GPU
+
+N: 100                    # unchanged; EM steps for cache simulation and evaluation
+log_stride: 25            # ~250 points per drift, vs 5000/100 = 50 at the reference step counts
