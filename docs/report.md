@@ -118,3 +118,10 @@ Execution:
 Results: 
 - Completed in ~7 minutes
     - /flash/project_465002822/sb-match/outputs/bridge/hydra/2026-08-10_16-59-42/
+
+### Setup 5.1 - Full Experiment
+
+Objective: Train models with the setting reported in the (Shi et al., 2023).
+
+Execution:
+- `sbatch scripts/bridge_512.sh`
