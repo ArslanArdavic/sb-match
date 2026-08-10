@@ -98,7 +98,7 @@ Observation: DDBSM does not implement EMA!
 
 Conclusion: **SKIP THIS SETUP**
 
-## Setup 5 - Bridge Prototype with Caching 64x64
+## Setup 5 - Bridge Prototype with Caching 512x512
 
 Objective: Introduce the caching mechanism to prevent sampling over the whole source/target datasets.
 
@@ -113,4 +113,8 @@ Observation:
 Objective: Smoke train. (`bridge_prototype.py`)
 
 Execution: 
-- `sbatch scripts/bridge_prototype.sh`
+- `sbatch scripts/bridge_smoke_512.sh`
+
+Results: 
+- Completed in ~7 minutes
+    - /flash/project_465002822/sb-match/outputs/bridge/hydra/2026-08-10_16-59-42/

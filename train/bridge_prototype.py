@@ -20,6 +20,7 @@ OUR DESING CHOICES:
     14. EFFECTIVELY ALINGS: no noise term at the last em step, reference parametrizes
     15. backward net reparametrized to its own time, tau = 1 - t
     16. ALIGNS
+    17. one file per direction, net + optimizer, overwritten after each drift, last 1 kept
 
 
 REFERENCE CHOICES:
@@ -41,6 +42,8 @@ REFERENCE CHOICES:
     14. modified euler maruyama for the cache, the final step drops the noise term
     15. both nets share the global t, backward simulates it downwards
     16. first_num_iter separate from num_iter, the bridge matching pretrain gets 100000 vs 5000 per outer at afhq
+    17. net, optimizer and ema net saved separately per (direction, outer, step), every gif_stride and at drift end,
+        nothing pruned, the suffix the three share is what find_last_ckpt resumes from
 
 PAPER vs REFERENCE IMPLEMENTATION MISMATCHES:
     afhq numbers above come from the paper appendix I.5, not from conf/dataset/afhq_transfer.yaml, which is stale on:
@@ -56,6 +59,7 @@ PAPER vs REFERENCE IMPLEMENTATION MISMATCHES:
 ################################################################################################################################
 """
 import logging
+import os
 import time
 
 import wandb
@@ -72,12 +76,13 @@ log = logging.getLogger(__name__)
 
 def train(config):
 
-    PRM = ["device", "datadir", "downsize", "cache_limit", "batch_size", "lr", "n_outer", 
+    PRM = ["device", "datadir", "ckptdir", "downsize", "cache_limit", "batch_size", "lr", "n_outer",
            "steps_first_round","steps_per_drift", "steps_cache_refresh", "cache_npair", "N", "sigma", "eps", "log_stride"]
     assert not [prm for prm in PRM if prm not in config]
 
     device              = config["device"]
     datadir             = config["datadir"]
+    ckptdir             = config["ckptdir"]
     downsize            = config["downsize"] 
     cache_limit         = config["cache_limit"] 
     batch_size          = config["batch_size"]
@@ -95,6 +100,8 @@ def train(config):
     assert cache_npair % cache_limit == 0
     assert cache_npair % batch_size  == 0
 
+
+    os.makedirs(ckptdir, exist_ok=True)
 
     run = setup_wandb(config)
     cache_epochs = batch_size * steps_cache_refresh / cache_npair
@@ -204,7 +211,7 @@ def train(config):
                         run.log({
                             "forward/loss"      : loss.item(),
                             "forward/grad_norm" : grad_norm.item(),
-                            "global_step"       : steps_first_round + (outer-1)*steps_per_drift + step if outer != 0 else step,
+                            "global_step"       : compute_global_step(outer, step, steps_first_round, steps_per_drift),
                         })
                         log.info("outer %d | forward | step %5d/%d | loss %.4f | grad_norm %.3f",
                                  outer, step, step_limit, loss.item(), grad_norm.item())
@@ -212,6 +219,10 @@ def train(config):
                     step += 1
 
                 log.info("outer %d/%d | forward | done in %.1fs", outer, n_outer - 1, time.time() - stage_start)
+
+                save_drift(forward_net, forward_optimizer, "forward", outer,
+                           compute_global_step(outer, step, steps_first_round, steps_per_drift),
+                           downsize, ckptdir, run)
 
             elif direction == "backward":     
 
@@ -287,7 +298,7 @@ def train(config):
                         run.log({
                             "backward/loss"      : loss.item(),
                             "backward/grad_norm" : grad_norm.item(),
-                            "global_step"        : steps_first_round + (outer-1)*steps_per_drift + step if outer != 0 else step,
+                            "global_step"        : compute_global_step(outer, step, steps_first_round, steps_per_drift),
                         })
                         log.info("outer %d | backward | step %5d/%d | loss %.4f | grad_norm %.3f",
                                  outer, step, step_limit, loss.item(), grad_norm.item())
@@ -296,9 +307,42 @@ def train(config):
 
                 log.info("outer %d/%d | backward | done in %.1fs", outer, n_outer - 1, time.time() - stage_start)
 
+                save_drift(backward_net, backward_optimizer, "backward", outer,
+                           compute_global_step(outer, step, steps_first_round, steps_per_drift),
+                           downsize, ckptdir, run)
+
     log.info("training finished, %d outer iterations", n_outer)
     run.finish()
-            
+
+def compute_global_step(outer, step, steps_first_round, steps_per_drift):
+    # both directions of an outer share a range, so each wandb series comes out continuous
+    if outer == 0:
+        return step
+    return steps_first_round + (outer - 1) * steps_per_drift + step
+
+def save_drift(net, optimizer, direction, outer, global_step, downsize, ckptdir, run):
+    """one file per direction, overwritten after every drift. keeps the last drift only."""
+
+    path = os.path.join(ckptdir, f"drift_{direction}.pt")
+    tmp  = path + ".tmp"   # same directory, so os.replace below stays atomic
+
+    torch.save({
+        "net"         : net.state_dict(),
+        "optimizer"   : optimizer.state_dict(),
+        "direction"   : direction,
+        "outer"       : outer,
+        "global_step" : global_step,
+        "downsize"    : downsize,   # build_models(downsize) rebuilds the shell this loads into
+    }, tmp)
+    os.replace(tmp, path)
+
+    # summary, not log: one current value per direction, matching the one file we keep
+    run.summary[f"{direction}/ckpt_outer"] = outer
+    run.summary[f"{direction}/ckpt_path"]  = path
+
+    log.info("outer %d/%s | saved %s", outer, direction, path)
+
+
 def build_models(downsize):
 
     if downsize == 64:

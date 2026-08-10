@@ -9,6 +9,10 @@ defaults:
 
 device: cuda
 
+# one file per direction, overwritten after every drift. hydra.job.chdir is false, so this has to
+# name the run dir explicitly rather than lean on cwd; the weights land next to main.log and .hydra/
+ckptdir: ${hydra:runtime.output_dir}/checkpoints
+
 lr: 1.0e-4
 n_outer: 20                # paper appendix I.5: n_ipf = 20 (yaml says 30, see module docstring)
 steps_first_round: 100000  # first_num_iter, bridge-matching pretrain
