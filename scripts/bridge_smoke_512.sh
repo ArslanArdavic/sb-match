@@ -32,7 +32,7 @@ mkdir -p "${WANDB_DIR}" "${WANDB_CACHE_DIR}"
 
 PROJECT_DIR=/project/project_465002822/sb-match/
 
-SIF=/project/project_465002822/containers/sb-match-20260627.sif
+SIF=/flash/project_465002822/containers/sb-match-20260810.sif
 
 srun singularity run \
   -B /scratch/project_465002822 \

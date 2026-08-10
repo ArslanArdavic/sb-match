@@ -13,7 +13,10 @@ torchmetrics                1.9.0
 torchvision                 0.26.0+cu126 
    
 networkx                    3.6.1           
-numpy                       2.4.4           
+numpy                       2.4.4     
+
+hydra                       1.3.2
+omegaconf                   2.3.1
 ```
 
 # New dependencies
