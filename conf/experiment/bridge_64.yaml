@@ -70,7 +70,7 @@ lr: 1.0e-4                # reference value, deliberately NOT batch-scaled -- se
 
 n_outer: 20               # unchanged, paper appendix I.5 n_ipf = 20
 steps_first_round: 6250   # 100000 * 4 / 64
-steps_per_drift: 312      # 5000 * 4 / 64
+steps_per_drift: 1562      # 25000 * 4 / 64
 steps_cache_refresh: 80   # holds cache_epochs at 10.0
 
 # train() asserts cache_npair % cache_limit == 0 and cache_npair % batch_size == 0
@@ -78,4 +78,4 @@ cache_npair: 512          # 512/5153 = 9.9% of the class, ref cache_npar 400 = 7
 cache_limit: 128          # 4 chunks per refresh; the EM chunk that has to fit on the GPU
 
 N: 100                    # unchanged; EM steps for cache simulation and evaluation
-log_stride: 25            # ~250 points per drift, vs 5000/100 = 50 at the reference step counts
+log_stride: 10            # ~250 points per drift, vs 5000/100 = 50 at the reference step counts

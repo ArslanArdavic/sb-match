@@ -16,7 +16,7 @@ ckptdir: ${hydra:runtime.output_dir}/checkpoints
 lr: 1.0e-4
 n_outer: 20                # paper appendix I.5: n_ipf = 20 (yaml says 30, see module docstring)
 steps_first_round: 100000  # first_num_iter, bridge-matching pretrain
-steps_per_drift: 5000      # num_iter for every later outer
+steps_per_drift: 25000     # num_iter for every later outer
 steps_cache_refresh: 1000  # cache_refresh_stride
 
 N: 100                     # EM steps, both for cache simulation and evaluation
