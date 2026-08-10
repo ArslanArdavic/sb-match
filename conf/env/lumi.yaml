@@ -2,4 +2,4 @@
 # keys land at the top level, not under `env.`
 
 datadir: /flash/project_465002822/sb-match/data/afhq/train/
-outdir: /flash/project_465002822/sb-match/tests/outputs/bridge
+outdir: /flash/project_465002822/sb-match/outputs/bridge

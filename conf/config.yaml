@@ -1,7 +1,8 @@
 defaults:
   - _self_        # keys below are overridden by the groups that follow
   - env: lumi     # conf/env/*.yaml   -> datadir, outdir  (where the run lives)
-  - res: 512      # conf/res/*.yaml   -> downsize, batch_size, cache sizing
+  - res: "512"    # conf/res/*.yaml   -> downsize, batch_size, cache sizing (quoted: bare 512 is an int, hydra wants a string)
+  - experiment: null   # conf/experiment/*.yaml -> optional, last word on every key above
 
 # --- flat keys consumed by train.bridge_prototype.train() -----------------------
 # every name in bridge_prototype.PRM must resolve here or in one of the groups

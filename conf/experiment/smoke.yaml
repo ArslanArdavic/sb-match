@@ -1,0 +1,35 @@
+# @package _global_
+# smoke test: run every code path once, cheaply, at the real 512px model.
+#
+#   python3 -u main.py experiment=smoke
+#
+# what stays real, because this is what actually breaks:
+#   - downsize 512 -> the 7 level DDPMpp_RF branch of build_models()
+#   - cache_limit 10 -> the EM simulation chunk that has to fit on the GPU
+#   - batch_size 4 -> the training footprint (fwd + bwd + Adam states)
+# what shrinks: step counts only.
+#
+# paths this is sized to hit:
+#   outer 0        -> the no-cache branch, independent coupling, both directions
+#   outer 1        -> the cached branch, both directions
+#   2 refreshes    -> steps_per_drift / steps_cache_refresh = 2, so the second one
+#                     exercises dropping the old handle + empty_cache, not just the first build
+#   4 chunks       -> cache_npair / cache_limit = 4, so the chunk loop actually loops
+#   4 logs / drift -> steps_per_drift / log_stride, enough for wandb to draw a line
+
+defaults:
+  - override /res: "512"   # pinned: the cache numbers below are divisible by 512's batch_size, not 64's
+
+n_outer: 2
+steps_first_round: 20
+steps_per_drift: 40
+steps_cache_refresh: 20
+
+# 40 % cache_limit(10) == 0 and 40 % batch_size(4) == 0, both asserted in train()
+cache_npair: 40
+
+N: 10                    # EM steps; 100 -> 10 is the single biggest cost cut here
+log_stride: 5
+
+wandb:
+  project: dsbm-afqh-smoke   # keep smoke runs out of the real project

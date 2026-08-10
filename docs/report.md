@@ -107,3 +107,10 @@ Reference: Shi et al. (2023) adapts trajectory caching procedure of De Bortoli e
 Observation: 
 - DDBSM does not implement caching! 
 - DBSM iterates training loop over a constant regarding the number of steps. 
+
+### Setup 5.1 - Smoke Train
+
+Objective: Smoke train. (`bridge_prototype.py`)
+
+Execution: 
+- `sbatch scripts/bridge_prototype.sh`

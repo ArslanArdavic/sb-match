@@ -1,15 +1,19 @@
+**This file is no longer maintained.** 
+
 
 ## forward_backward_prototype (64px)
 
 ```
 Possibly will TIMEOUT due 6 hours limit.
-Submitted same job with JobID: 
+Submitted same job with
+  JobID:19586942 
+  log: /pfs/lustrep3/projappl/project_465002822/sb-match/tests/outputs/log/forward_backward_prototype_19586942.out
   - 24 hours limit
   - "sample_batch_size"=1024
 ```
 
 JobID: 19576722
-log:   pfs/lustrep3/projappl/project_465002822/sb-match/tests/outputs/log/forward_backward_prototype_19576722.out
+log:   /pfs/lustrep3/projappl/project_465002822/sb-match/tests/outputs/log/forward_backward_prototype_19576722.out
 
 config = {
       "device"    : "cuda",

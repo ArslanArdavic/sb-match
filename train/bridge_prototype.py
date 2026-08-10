@@ -55,6 +55,9 @@ PAPER vs REFERENCE IMPLEMENTATION MISMATCHES:
 
 ################################################################################################################################
 """
+import logging
+import time
+
 import wandb
 import torch
 from omegaconf import DictConfig, OmegaConf
@@ -63,6 +66,9 @@ from diffusers import UNet2DModel
 
 from utils.process_image import load_afhq_train, infinite_dataloader
 from diffusion.reference import sample_conditioned_brownian_bridge, sample_markovian_drift_target_brownian_bridge
+
+# goes to both the slurm .out and ${outdir}/hydra/<ts>/main.log, see main.py
+log = logging.getLogger(__name__)
 
 def train(config):
 
@@ -91,10 +97,17 @@ def train(config):
 
 
     run = setup_wandb(config)
-    run.config.update({
-        "cache_epochs": batch_size * steps_cache_refresh / cache_npair,
-        "data_epochs":  steps_per_drift * cache_npair / (5153 * steps_cache_refresh),
-    })
+    cache_epochs = batch_size * steps_cache_refresh / cache_npair
+    data_epochs  = steps_per_drift * cache_npair / (5153 * steps_cache_refresh)
+    run.config.update({"cache_epochs": cache_epochs, "data_epochs": data_epochs})
+
+    log.info(
+        # run.name is None until an offline run is synced, run.id exists in both modes
+        "run %s | %dpx | %d outer x (%d + %d) steps | bs %d | cache %d pairs / %d chunk / N %d "
+        "| cache_epochs %.2f | data_epochs %.4f",
+        run.id, downsize, n_outer, steps_first_round, steps_per_drift, batch_size,
+        cache_npair, cache_limit, N, cache_epochs, data_epochs,
+    )
 
     dt = torch.tensor([1 / N], device=device) # EM simulation needs
     
@@ -128,6 +141,9 @@ def train(config):
                 else:
                     step_limit = steps_per_drift
 
+                log.info("outer %d/%d | forward | %d steps", outer, n_outer - 1, step_limit)
+                stage_start = time.time()
+
                 while step < step_limit:
 
                     if outer != 0 and step % steps_cache_refresh == 0:
@@ -139,6 +155,7 @@ def train(config):
                         XT     = torch.empty(cache_npair, 3, downsize, downsize) 
 
                         backward_net.eval()
+                        refresh_start = time.time()
 
                         for i in range(cache_npair // cache_limit):
                             xT, _ = next(infinite_target_cache_dataloader) # dismiss the label
@@ -158,6 +175,9 @@ def train(config):
                             XT[i*cache_limit : (i+1)*cache_limit]     = xT
 
                         infinite_pair_loader =  infinite_dataloader(DataLoader(TensorDataset(X0_sim, XT), batch_size=batch_size, shuffle=True, drop_last=True))
+
+                        log.info("  cache refresh at step %d | %d pairs simulated backward in %.1fs",
+                                 step, cache_npair, time.time() - refresh_start)
 
                     if outer == 0:
                         x0, _ = next(infinite_source_train_dataloader)
@@ -186,8 +206,12 @@ def train(config):
                             "forward/grad_norm" : grad_norm.item(),
                             "global_step"       : steps_first_round + (outer-1)*steps_per_drift + step if outer != 0 else step,
                         })
+                        log.info("outer %d | forward | step %5d/%d | loss %.4f | grad_norm %.3f",
+                                 outer, step, step_limit, loss.item(), grad_norm.item())
 
                     step += 1
+
+                log.info("outer %d/%d | forward | done in %.1fs", outer, n_outer - 1, time.time() - stage_start)
 
             elif direction == "backward":     
 
@@ -200,6 +224,9 @@ def train(config):
                 else:
                     step_limit = steps_per_drift
 
+                log.info("outer %d/%d | backward | %d steps", outer, n_outer - 1, step_limit)
+                stage_start = time.time()
+
                 while step < step_limit:
 
                     if outer != 0 and step % steps_cache_refresh == 0:
@@ -211,6 +238,7 @@ def train(config):
                         XT_sim  = torch.empty(cache_npair, 3, downsize, downsize) 
 
                         forward_net.eval()
+                        refresh_start = time.time()
 
                         for i in range(cache_npair // cache_limit):
                             x0, _ = next(infinite_source_cache_dataloader) # dismiss the label
@@ -230,6 +258,9 @@ def train(config):
                             XT_sim[i*cache_limit : (i+1)*cache_limit]   = xt.cpu()
 
                         infinite_pair_loader =  infinite_dataloader(DataLoader(TensorDataset(X0, XT_sim), batch_size=batch_size, shuffle=True, drop_last=True))
+
+                        log.info("  cache refresh at step %d | %d pairs simulated forward in %.1fs",
+                                 step, cache_npair, time.time() - refresh_start)
 
                     if outer == 0:
                         x0, _ = next(infinite_source_train_dataloader)
@@ -258,9 +289,14 @@ def train(config):
                             "backward/grad_norm" : grad_norm.item(),
                             "global_step"        : steps_first_round + (outer-1)*steps_per_drift + step if outer != 0 else step,
                         })
+                        log.info("outer %d | backward | step %5d/%d | loss %.4f | grad_norm %.3f",
+                                 outer, step, step_limit, loss.item(), grad_norm.item())
 
                     step += 1
 
+                log.info("outer %d/%d | backward | done in %.1fs", outer, n_outer - 1, time.time() - stage_start)
+
+    log.info("training finished, %d outer iterations", n_outer)
     run.finish()
             
 def build_models(downsize):
